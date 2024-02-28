@@ -7,6 +7,7 @@ from snowflake.snowpark import Session
 st.cache_data.clear()
 st.cache_resource.clear()
 
+
 def create_session():
     return Session.builder.configs(st.secrets["snowflake"]).create()
 
@@ -34,13 +35,12 @@ with st.expander("See sample sales dataset"):
     df = load_data(table_name)
     st.dataframe(df)
 
-
 def make_heatmap ():
         df = session.sql("SELECT timestamp, units_sold, NULL AS forecast FROM ADIDAS.PUBLIC.Mens_Apparel_sales UNION SELECT TS AS timestamp, NULL AS units_sold, forecast FROM ADIDAS.PUBLIC.sales_predictions ORDER BY timestamp asc").to_pandas()
     
         # Plotting using Matplotlib
-        #fig, ax = plt.subplots(figsize=(10, 6))
-        fig, ax = plt.subplots()  # You can adjust the figure size as needed
+        fig, ax = plt.subplots(figsize=(10, 6))
+        #fig, ax = plt.subplots()  # You can adjust the figure size as needed
         ax.plot(df['TIMESTAMP'], df['UNITS_SOLD'], label='Units Sold', color='blue', linewidth=2)
         ax.plot(df['TIMESTAMP'], df['FORECAST'], label='Forecast', color='yellow', linewidth=2)
 
@@ -54,13 +54,18 @@ def make_heatmap ():
         st.session_state.fig = fig
         # Show the plot in Streamlit
         
-
-
         return st.session_state.fig
 
 
 # Sidebar for actions
 with st.sidebar:
+ with st.expander("Expand this area to explore first part"):
+    st.markdown("""
+- First part will generate forecasting model for units sold for only one product- **Men's Apparel**.
+- Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the number of days selected by user.
+- Finally we will generate visualizations in the form of line chart.
+
+""")
     if 'button_clicked1' not in st.session_state:
         st.session_state.button_clicked1 = False
     if st.button("Create Forecasting Model!"):
@@ -68,25 +73,69 @@ with st.sidebar:
         session.sql("CREATE OR REPLACE forecast ADIDAS.PUBLIC.sales_forecast (INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'ADIDAS.PUBLIC.Mens_Apparel_sales'),TIMESTAMP_COLNAME => 'TIMESTAMP',TARGET_COLNAME => 'UNITS_SOLD');").collect()
     if st.session_state.button_clicked1:
         st.success("Forecasting Model created successfully !")
-        
+
+    st.columns((1.5, 4.5, 2), gap='medium')
+    Days = st.selectbox(
+     'Select Forecasting Period in days',
+     ('30', '60', '90'))
+
+    st.write('Selected days:', Days)
+
     if 'button_clicked2' not in st.session_state:
         st.session_state.button_clicked2 = False
     if st.button("Create Predictions!"):
         st.session_state.button_clicked2=True
-        session.sql("CALL ADIDAS.PUBLIC.sales_forecast!FORECAST(FORECASTING_PERIODS => 30);").collect()
+        session.sql("CALL ADIDAS.PUBLIC.sales_forecast!FORECAST(FORECASTING_PERIODS =>"+Days+");").collect()
         session.sql("CREATE OR REPLACE TABLE ADIDAS.PUBLIC.sales_predictions AS (SELECT * FROM TABLE(RESULT_SCAN(-1)));").collect()
     if st.session_state.button_clicked2:
         st.success("Predictions created successfully !")
-    
+
     if 'button_clicked3' not in st.session_state:
         st.session_state.button_clicked3 = False
     if st.button("Create Visualizations!"):
         st.session_state.button_clicked3=True
 
+    st.write(":heavy_minus_sign:" * 29) 
 
-col = st.columns((1.5, 4.5, 2), gap='medium')
+ with st.expander("Expand this area to explore second part"):
+    st.markdown("""
+- Second part will generate forecasting model for units sold for multiple products- **Men's Apparel**,**Men's Athletic Footwear** & **Men's Street Footwear**.
+- Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the next 30 days.
+- Finally we will generate visualizations in the form of line chart.
 
-with col[0]:
+""")
+
+    if 'button_clicked4' not in st.session_state:
+        st.session_state.button_clicked4 = False
+    if st.button("Build Forecasting Model!"):
+        # Build Forecasting Model logic here
+        st.session_state.button_clicked4=True
+        session.sql("CREATE OR REPLACE forecast ADIDAS.PUBLIC.allproducts_forecast (INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'ADIDAS.PUBLIC.allproducts_sales'),SERIES_COLNAME => 'PRODUCT',TIMESTAMP_COLNAME => 'TIMESTAMP',TARGET_COLNAME => 'UNITS_SOLD');").collect()
+    if st.session_state.button_clicked4:
+        st.success("Forecasting Model created successfully !")
+
+    if 'button_clicked5' not in st.session_state:
+        st.session_state.button_clicked5 = False
+    if st.button("Generate Predictions!"):
+        # Generate Predictions logic here
+        st.session_state.button_clicked5=True
+        session.sql("CALL ADIDAS.PUBLIC.allproducts_forecast!forecast(INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'ADIDAS.PUBLIC.us_forecast_data'),SERIES_COLNAME => 'product',TIMESTAMP_COLNAME => 'timestamp');").collect()
+        session.sql("CREATE OR REPLACE TABLE ADIDAS.PUBLIC.us_sales_predictions AS (SELECT * FROM TABLE(RESULT_SCAN(-1)));").collect()
+    if st.session_state.button_clicked5:
+        st.success("Predictions created successfully !")
+
+    if 'button_clicked6' not in st.session_state:
+        st.session_state.button_clicked5 = False
+    if st.button("Generate Visualizations!"):
+        # Generate Visualizations logic for col6 here
+        # Visualization logic here (use fit-to-screen mode)
+        st.success("Visualization created")
+
+
+
+#col = st.columns((1.5, 4.5, 2), gap='medium')
+
+with st.container():
     st.markdown('#### Visualization')
      
     heatmap= make_heatmap()
@@ -95,13 +144,4 @@ with col[0]:
         st.pyplot(heatmap,use_container_width=True)
         #st.success("Visualization created")
      
-    if st.button("Build Forecasting Model!"):
-        # Build Forecasting Model logic here
-        st.success("Forecasting Model created successfully !")
-    if st.button("Generate Predictions!"):
-        # Generate Predictions logic here
-        st.success("Predictions created successfully !")
-    if st.button("Generate Visualizations!"):
-        # Generate Visualizations logic for col6 here
-        # Visualization logic here (use fit-to-screen mode)
-        st.success("Visualization created")
+    
