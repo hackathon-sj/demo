@@ -18,7 +18,7 @@ st.title('Sales Forecast Visualization Application')
 st.markdown("""
 This app will build **forecast model** adding holiday information & generate predictions for units sold, total sales & operating profit.
 - Below is a sample Adidas sales dataset for the last 2 years consisting of different footwear products
-(Men's Street Footwear, Men's Athletic Footwear, Men's Apparel, Women's Street Footwear, Women's Athletic Footwear, Women's Apparel) **sold across NYC**.
+(Men's Street Footwear, Men's Athletic Footwear, Men's Apparel, Women's Street Footwear, Women's Athletic Footwear, Women's Apparel) **sold across NYC** **:sun_with_face:**
 * **Python libraries:** pandas, streamlit, matplotlib, altair
 """)
 
@@ -57,9 +57,46 @@ def make_heatmap ():
         return st.session_state.fig
 
 
+def make_chart ():
+    df = session.sql("SELECT to_date(timestamp)as timestamp, units_sold, product, NULL AS forecast FROM ADIDAS.PUBLIC.allproducts_sales where to_date(timestamp ) > (SELECT max(to_date(timestamp)) - interval ' 1 months' FROM ADIDAS.PUBLIC.allproducts_sales) UNION SELECT to_date(TS) AS timestamp, NULL AS units_sold, series AS product, forecast FROM ADIDAS.PUBLIC.us_sales_predictions ORDER BY timestamp, product asc").to_pandas()
+        
+    
+# Altair tooltip for interactive exploration
+    tooltip = [alt.Tooltip('TIMESTAMP:T', title='TIMESTAMP'),
+                alt.Tooltip('PRODUCT:N', title='PRODUCT'),
+                alt.Tooltip('UNITS_SOLD:Q', title='UNITS SOLD'),
+                alt.Tooltip('FORECAST:Q', title='FORECAST')]
+# Create a base chart with common encoding
+    base = alt.Chart(df).encode(
+            alt.X('TIMESTAMP:T', title='Timestamp'),
+            alt.Color('PRODUCT:N', legend=alt.Legend(title="Product"))
+         ).properties(
+            width='container'
+         )
+         
+# Define the units sold line
+    units_sold_line = base.mark_line().encode(
+            alt.Y('UNITS_SOLD:Q', title='Values', scale=alt.Scale(zero=False)),
+            tooltip=tooltip
+        )
+# Define the forecast line
+    forecast_line = base.mark_line(strokeDash=[5,5]).encode(
+            alt.Y('FORECAST:Q', scale=alt.Scale(zero=False)),
+            tooltip=tooltip
+        )
+# Combine the charts
+        #chart = alt.layer(units_sold_line, forecast_line).resolve_scale(y='independent')
+        #chart = alt.layer( forecast_line).resolve_scale(y='independent')
+    chart = alt.layer(units_sold_line, forecast_line).interactive()
+        #chart.grid(True)
+        #chart.legend()
+    st.session_state.chart = chart
+    return st.session_state.chart
+
+
 # Sidebar for actions
 with st.sidebar:
- with st.expander("Expand this area to explore first part"):
+ with st.expander("Expand this area to explore **first** part"):
     st.markdown("""
 - First part will generate forecasting model for units sold for only one product- **Men's Apparel**.
 - Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the number of days selected by user.
@@ -97,7 +134,7 @@ with st.sidebar:
 
     st.write(":heavy_minus_sign:" * 29) 
 
- with st.expander("Expand this area to explore second part"):
+ with st.expander("Expand this area to explore **:orange[second]** part"):
     st.markdown("""
 - Second part will generate forecasting model for units sold for multiple products- **Men's Apparel**,**Men's Athletic Footwear** & **Men's Street Footwear**.
 - Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the next 30 days.
@@ -125,23 +162,34 @@ with st.sidebar:
         st.success("Predictions created successfully !")
 
     if 'button_clicked6' not in st.session_state:
-        st.session_state.button_clicked5 = False
+        st.session_state.button_clicked6 = False
     if st.button("Generate Visualizations!"):
         # Generate Visualizations logic for col6 here
         # Visualization logic here (use fit-to-screen mode)
-        st.success("Visualization created")
+        st.session_state.button_clicked6=True
+        
 
 
 
 #col = st.columns((1.5, 4.5, 2), gap='medium')
-
-with st.container():
-    st.markdown('#### Visualization')
+with st.expander("Expand this area to visualize line chart for **first** part"):
+    with st.container():
+        st.markdown('#### Visualization')
      
-    heatmap= make_heatmap()
+        heatmap= make_heatmap()
     if st.session_state.button_clicked3:
         
         st.pyplot(heatmap,use_container_width=True)
-        #st.success("Visualization created")
+        st.success("Visualization created")
      
-    
+
+with st.expander("Expand this area to visualize line chart for **second** part"):
+    with st.container():
+        st.markdown('#### Visualization 2')
+     
+    chart1= make_chart()
+    if st.session_state.button_clicked6:
+       st.altair_chart(chart1, use_container_width=True)
+        
+        #st.pyplot(heatmap,use_container_width=True)
+       st.success("Visualization created finally")
