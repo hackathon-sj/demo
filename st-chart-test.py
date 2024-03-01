@@ -1,6 +1,7 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import altair as alt
+import pandas as pd
 from snowflake.snowpark import Session
 
 # Establish Snowflake session
@@ -36,25 +37,41 @@ with st.expander("See sample sales dataset"):
     st.dataframe(df)
 
 def make_heatmap ():
-        df = session.sql("SELECT timestamp, units_sold, NULL AS forecast FROM ADIDAS.PUBLIC.Mens_Apparel_sales UNION SELECT TS AS timestamp, NULL AS units_sold, forecast FROM ADIDAS.PUBLIC.sales_predictions ORDER BY timestamp asc").to_pandas()
     
-        # Plotting using Matplotlib
-        fig, ax = plt.subplots(figsize=(10, 6))
-        #fig, ax = plt.subplots()  # You can adjust the figure size as needed
-        ax.plot(df['TIMESTAMP'], df['UNITS_SOLD'], label='Units Sold', color='blue', linewidth=2)
-        ax.plot(df['TIMESTAMP'], df['FORECAST'], label='Forecast', color='yellow', linewidth=2)
+ # Assuming 'df' is a pandas DataFrame with 'TIMESTAMP', 'UNITS_SOLD', and 'FORECAST' columns
+    df = session.sql("SELECT timestamp, units_sold, NULL AS forecast FROM ADIDAS.PUBLIC.Mens_Apparel_sales UNION SELECT TS AS timestamp, NULL AS units_sold, forecast FROM ADIDAS.PUBLIC.sales_predictions ORDER BY timestamp asc").to_pandas()
 
-        # Beautifying the plot
-        ax.set_xlabel('Timestamp', fontsize=14)
-        ax.set_ylabel('Values', fontsize=14)
-        ax.set_title('Units Sold Forecast Visualization', fontsize=16)
-        ax.grid(True)
-        ax.legend()
-                
-        st.session_state.fig = fig
-        # Show the plot in Streamlit
-        
-        return st.session_state.fig
+    # Convert TIMESTAMP from string to datetime if not already
+    df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'])
+
+    # Creating line charts for Units Sold and Forecast
+    line_units_sold = alt.Chart(df).mark_line(color='blue', size=2).encode(
+        x='TIMESTAMP:T',
+        y='UNITS_SOLD:Q',
+        tooltip=['TIMESTAMP', 'UNITS_SOLD']
+    ).properties(
+        title='Units Sold'
+    )
+
+    line_forecast = alt.Chart(df).mark_line(color='yellow', size=2).encode(
+        x='TIMESTAMP:T',
+        y='FORECAST:Q',
+        tooltip=['TIMESTAMP', 'FORECAST']
+    ).properties(
+        title='Forecast'
+    )
+
+    # Combine the charts
+    chart = alt.layer(line_units_sold, line_forecast).resolve_scale(
+        y='independent'
+    ).properties(
+        title='Units Sold Forecast Visualization',
+        width='container',
+        height=300  # You can adjust the height as needed
+    )
+
+    return chart
+
 
 
 def make_chart ():
@@ -151,11 +168,18 @@ with st.sidebar:
     if st.session_state.button_clicked4:
         st.success("Forecasting Model created successfully !")
 
+    st.columns((1.5, 4.5, 2), gap='medium')
+    Days1 = st.selectbox(
+     'Select Forecasting Period in days!',
+     ('30', '60', '90'))
+
+    st.write('Selected days:', Days1)
     if 'button_clicked5' not in st.session_state:
         st.session_state.button_clicked5 = False
     if st.button("Generate Predictions!"):
         # Generate Predictions logic here
         st.session_state.button_clicked5=True
+        session.sql("CREATE OR REPLACE VIEW us_forecast_data AS (WITH future_dates AS (SELECT (select max(timestamp) from NY_SALES_DATA) ::DATE + row_number() OVER (ORDER BY 0) AS timestamp FROM TABLE(generator(rowcount => "+Days1+"))),product_items AS (select distinct product  from allproducts_sales),joined_product_items AS (SELECT * FROM product_items CROSS JOIN future_dates ORDER BY product ASC, timestamp ASC)SELECT jmi.product,to_timestamp_ntz(jmi.timestamp) AS timestamp,ch.holiday_name FROM joined_product_items AS jmi LEFT JOIN us_holidays ch ON jmi.timestamp = ch.date ORDER BY jmi.product ASC,jmi.timestamp ASC);").collect()
         session.sql("CALL ADIDAS.PUBLIC.allproducts_forecast!forecast(INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'ADIDAS.PUBLIC.us_forecast_data'),SERIES_COLNAME => 'product',TIMESTAMP_COLNAME => 'timestamp');").collect()
         session.sql("CREATE OR REPLACE TABLE ADIDAS.PUBLIC.us_sales_predictions AS (SELECT * FROM TABLE(RESULT_SCAN(-1)));").collect()
     if st.session_state.button_clicked5:
@@ -176,12 +200,11 @@ with st.expander("Expand this area to visualize line chart for **first** part"):
     with st.container():
         st.markdown('#### Visualization')
      
-        heatmap= make_heatmap()
+ 
+    heatmap_chart = make_heatmap()
     if st.session_state.button_clicked3:
-        
-        st.pyplot(heatmap,use_container_width=True)
+        st.altair_chart(heatmap_chart, use_container_width=True)
         st.success("Visualization created")
-     
 
 with st.expander("Expand this area to visualize line chart for **second** part"):
     with st.container():
