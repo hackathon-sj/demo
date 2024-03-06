@@ -2,3 +2,4 @@ matplotlib
 altair
 snowflake
 streamlit
+pandas

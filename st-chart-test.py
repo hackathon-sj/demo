@@ -8,20 +8,40 @@ from snowflake.snowpark import Session
 st.cache_data.clear()
 st.cache_resource.clear()
 
+st.set_page_config(
+    #page_title="Ex-stream-ly Cool App",
+    #page_icon="🧊",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+st.title('Sales Forecast Visualization Application')
 
 def create_session():
     return Session.builder.configs(st.secrets["snowflake"]).create()
 
 session = create_session()
 
-st.title('Sales Forecast Visualization Application')
+st.divider()
+
+c1, c2 = st.columns([1,2])
+with c1:
+ st.info('**💡 **Team Data Maverick**💡**')
+ st.success("**💡 **Team Data Maverick**💡**")
+ #st.info('**💡 Team Data Maverick 💡**', icon="💡")
+
+
 
 st.markdown("""
 This app will build **forecast model** adding holiday information & generate predictions for units sold, total sales & operating profit.
-- Below is a sample Adidas sales dataset for the last 2 years consisting of different footwear products
-(Men's Street Footwear, Men's Athletic Footwear, Men's Apparel, Women's Street Footwear, Women's Athletic Footwear, Women's Apparel) **sold across NYC** **:sun_with_face:**
+- Below is a sample Adidas sales dataset for the last 2 years consisting of below footwear products & sold across **NYC** **:sun_with_face:**
+    - **Men's Street Footwear**
+    - **Men's Athletic Footwear**
+    - **Men's Apparel**
 * **Python libraries:** pandas, streamlit, matplotlib, altair
 """)
+
+st.divider()
 
 def load_data(table_name):
     st.write(f"Here's some example data from `{table_name}`:")
@@ -32,7 +52,10 @@ def load_data(table_name):
 
 table_name = "ADIDAS.PUBLIC.SALES_DATA"
 
-with st.expander("See sample sales dataset"):
+col1,col2 = st.columns([1.5,2])
+
+with col1:
+ with st.expander("View and Download data"):
     df = load_data(table_name)
     st.dataframe(df)
 
@@ -42,7 +65,7 @@ def make_heatmap ():
     df = session.sql("SELECT timestamp, units_sold, NULL AS forecast FROM ADIDAS.PUBLIC.Mens_Apparel_sales UNION SELECT TS AS timestamp, NULL AS units_sold, forecast FROM ADIDAS.PUBLIC.sales_predictions ORDER BY timestamp asc").to_pandas()
 
     # Convert TIMESTAMP from string to datetime if not already
-    df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'])
+    #df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'])
 
     # Creating line charts for Units Sold and Forecast
     line_units_sold = alt.Chart(df).mark_line(color='blue', size=2).encode(
@@ -73,9 +96,47 @@ def make_heatmap ():
     return chart
 
 
+def make_heatmap3 ():
+    
+ # Assuming 'df' is a pandas DataFrame with 'TIMESTAMP', 'TOTAL_SALES_$', and 'FORECAST' columns
+    df = session.sql("SELECT timestamp, total_sales_$, NULL AS forecast FROM ADIDAS.PUBLIC.Mens_Apparel_total_sales UNION SELECT TS AS timestamp, NULL AS total_sales_$, forecast FROM ADIDAS.PUBLIC.total_sales_predictions ORDER BY timestamp asc").to_pandas()
+
+    # Convert TIMESTAMP from string to datetime if not already
+    #df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'])
+
+    # Creating line charts for Units Sold and Forecast
+    line_total_sales = alt.Chart(df).mark_line(color='blue', size=2).encode(
+        x='TIMESTAMP:T',
+        y='TOTAL_SALES_$:Q',
+        tooltip=['TIMESTAMP', 'TOTAL_SALES_$']
+    ).properties(
+        title='Total Sales'
+    )
+
+    line_forecast = alt.Chart(df).mark_line(color='yellow', size=2).encode(
+        x='TIMESTAMP:T',
+        y='FORECAST:Q',
+        tooltip=['TIMESTAMP', 'FORECAST']
+    ).properties(
+        title='Forecast'
+    )
+
+    # Combine the charts
+    chart3 = alt.layer(line_total_sales, line_forecast).resolve_scale(
+        y='independent'
+    ).properties(
+        title='Total Sales Forecast Visualization',
+        width='container',
+        height=300  # You can adjust the height as needed
+    )
+
+    return chart3
+
+
 
 def make_chart ():
-    df = session.sql("SELECT to_date(timestamp)as timestamp, units_sold, product, NULL AS forecast FROM ADIDAS.PUBLIC.allproducts_sales where to_date(timestamp ) > (SELECT max(to_date(timestamp)) - interval ' 1 months' FROM ADIDAS.PUBLIC.allproducts_sales) UNION SELECT to_date(TS) AS timestamp, NULL AS units_sold, series AS product, forecast FROM ADIDAS.PUBLIC.us_sales_predictions ORDER BY timestamp, product asc").to_pandas()
+    #df = session.sql("SELECT to_date(timestamp)as timestamp, units_sold, product, NULL AS forecast FROM ADIDAS.PUBLIC.allproducts_sales where to_date(timestamp ) > (SELECT max(to_date(timestamp)) - interval ' 1 months' FROM ADIDAS.PUBLIC.allproducts_sales) UNION SELECT to_date(TS) AS timestamp, NULL AS units_sold, series AS product, forecast FROM ADIDAS.PUBLIC.us_sales_predictions ORDER BY timestamp, product asc").to_pandas()
+    df = session.sql("SELECT timestamp as timestamp, units_sold, product, NULL AS forecast FROM ADIDAS.PUBLIC.allproducts_sales where to_date(timestamp ) > (SELECT max(to_date(timestamp)) - interval ' 2 months' FROM ADIDAS.PUBLIC.allproducts_sales) UNION SELECT TS AS timestamp, NULL AS units_sold, series AS product, forecast FROM ADIDAS.PUBLIC.us_sales_predictions ORDER BY timestamp, product asc").to_pandas()
         
     
 # Altair tooltip for interactive exploration
@@ -113,7 +174,7 @@ def make_chart ():
 
 # Sidebar for actions
 with st.sidebar:
- with st.expander("Expand this area to explore **first** part"):
+ with st.expander("Expand this area to explore **first** part",expanded=False):
     st.markdown("""
 - First part will generate forecasting model for units sold for only one product- **Men's Apparel**.
 - Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the number of days selected by user.
@@ -151,7 +212,7 @@ with st.sidebar:
 
     st.write(":heavy_minus_sign:" * 29) 
 
- with st.expander("Expand this area to explore **:orange[second]** part"):
+ with st.expander("Expand this area to explore **:orange[second]** part",expanded=False):
     st.markdown("""
 - Second part will generate forecasting model for units sold for multiple products- **Men's Apparel**,**Men's Athletic Footwear** & **Men's Street Footwear**.
 - Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the next 30 days.
@@ -179,7 +240,7 @@ with st.sidebar:
     if st.button("Generate Predictions!"):
         # Generate Predictions logic here
         st.session_state.button_clicked5=True
-        session.sql("CREATE OR REPLACE VIEW us_forecast_data AS (WITH future_dates AS (SELECT (select max(timestamp) from NY_SALES_DATA) ::DATE + row_number() OVER (ORDER BY 0) AS timestamp FROM TABLE(generator(rowcount => "+Days1+"))),product_items AS (select distinct product  from allproducts_sales),joined_product_items AS (SELECT * FROM product_items CROSS JOIN future_dates ORDER BY product ASC, timestamp ASC)SELECT jmi.product,to_timestamp_ntz(jmi.timestamp) AS timestamp,ch.holiday_name FROM joined_product_items AS jmi LEFT JOIN us_holidays ch ON jmi.timestamp = ch.date ORDER BY jmi.product ASC,jmi.timestamp ASC);").collect()
+        session.sql("CREATE OR REPLACE VIEW ADIDAS.PUBLIC.us_forecast_data AS (WITH future_dates AS (SELECT (select max(timestamp) from NY_SALES_DATA) ::DATE + row_number() OVER (ORDER BY 0) AS timestamp FROM TABLE(generator(rowcount => "+Days1+"))),product_items AS (select distinct product  from allproducts_sales),joined_product_items AS (SELECT * FROM product_items CROSS JOIN future_dates ORDER BY product ASC, timestamp ASC)SELECT jmi.product,to_timestamp_ntz(jmi.timestamp) AS timestamp,ch.holiday_name FROM joined_product_items AS jmi LEFT JOIN us_holidays ch ON jmi.timestamp = ch.date ORDER BY jmi.product ASC,jmi.timestamp ASC);").collect()
         session.sql("CALL ADIDAS.PUBLIC.allproducts_forecast!forecast(INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'ADIDAS.PUBLIC.us_forecast_data'),SERIES_COLNAME => 'product',TIMESTAMP_COLNAME => 'timestamp');").collect()
         session.sql("CREATE OR REPLACE TABLE ADIDAS.PUBLIC.us_sales_predictions AS (SELECT * FROM TABLE(RESULT_SCAN(-1)));").collect()
     if st.session_state.button_clicked5:
@@ -192,13 +253,50 @@ with st.sidebar:
         # Visualization logic here (use fit-to-screen mode)
         st.session_state.button_clicked6=True
         
+ with st.expander("Expand this area to explore **third** part",expanded=False):
+    st.markdown("""
+- Third part will generate forecasting model for units sold for only one product- **Men's Apparel**.
+- Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the number of days selected by user.
+- Finally we will generate visualizations in the form of line chart.
 
+""")
+    if 'button_clicked7' not in st.session_state:
+        st.session_state.button_clicked7 = False
+    if st.button("Create Forecasting Model for total sales!"):
+        st.session_state.button_clicked7=True
+        session.sql("CREATE OR REPLACE forecast ADIDAS.PUBLIC.sales_forecast (INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'ADIDAS.PUBLIC.Mens_Apparel_total_sales'),TIMESTAMP_COLNAME => 'TIMESTAMP',TARGET_COLNAME => 'TOTAL_SALES_$');").collect()
+    if st.session_state.button_clicked7:
+        st.success("Forecasting Model created successfully !")
+
+    st.columns((1.5, 4.5, 2), gap='medium')
+    Days2 = st.selectbox(
+     'Select Forecasting Period in days!!',
+     ('30', '60', '90'))
+
+    st.write('Selected days:', Days2)
+
+    if 'button_clicked8' not in st.session_state:
+        st.session_state.button_clicked8 = False
+    if st.button("Create Predictions for total sales!"):
+        st.session_state.button_clicked8=True
+        session.sql("CALL ADIDAS.PUBLIC.total_sales_forecast!FORECAST(FORECASTING_PERIODS =>"+Days2+");").collect()
+        session.sql("CREATE OR REPLACE TABLE ADIDAS.PUBLIC.total_sales_predictions AS (SELECT * FROM TABLE(RESULT_SCAN(-1)));").collect()
+    if st.session_state.button_clicked8:
+        st.success("Predictions created successfully !")
+
+    if 'button_clicked9' not in st.session_state:
+        st.session_state.button_clicked9 = False
+    if st.button("Create Visualizations for total sales!"):
+        st.session_state.button_clicked9=True
 
 
 #col = st.columns((1.5, 4.5, 2), gap='medium')
-with st.expander("Expand this area to visualize line chart for **first** part"):
+col1,col2 = st.columns([2.5,2])
+
+with col1:
+ with st.expander("Expand this area to visualize line chart for **first** part"):
     with st.container():
-        st.markdown('#### Visualization')
+        st.markdown('#### Visualization 1')
      
  
     heatmap_chart = make_heatmap()
@@ -206,7 +304,10 @@ with st.expander("Expand this area to visualize line chart for **first** part"):
         st.altair_chart(heatmap_chart, use_container_width=True)
         st.success("Visualization created")
 
-with st.expander("Expand this area to visualize line chart for **second** part"):
+col1,col2 = st.columns([2.5,2])
+
+with col1:
+ with st.expander("Expand this area to visualize line chart for **second** part"):
     with st.container():
         st.markdown('#### Visualization 2')
      
@@ -216,3 +317,22 @@ with st.expander("Expand this area to visualize line chart for **second** part")
         
         #st.pyplot(heatmap,use_container_width=True)
        st.success("Visualization created finally")
+
+col1,col2 = st.columns([2.5,2])
+
+with col1:
+ with st.expander("Expand this area to visualize line chart for **third** part"):
+    with st.container():
+        st.markdown('#### Visualization 3')
+     
+ 
+    heatmap_chart3 = make_heatmap3()
+    if st.session_state.button_clicked9:
+        st.altair_chart(heatmap_chart3, use_container_width=True)
+        st.success("Visualization created")
+
+st.divider()
+
+c1, c2, c3 = st.columns(3)
+with c1:
+    st.info('**Team Data Maverick:**', icon="💡")
