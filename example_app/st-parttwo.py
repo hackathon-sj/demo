@@ -5,25 +5,27 @@ import pandas as pd
 from snowflake.snowpark import Session
 from st_pages import add_page_title
 
-add_page_title(layout="wide")
+#add_page_title(layout="wide")
 
 # Establish Snowflake session
 st.cache_data.clear()
 st.cache_resource.clear()
+
+st.header(':shoe: **Part Two-Forecasting Demand for Multiple Products**')
+st.markdown("""- Men\'s Apparel
+- Men\'s Athletic Footwear 
+- Men\'s Street Footwear""")
 
 def create_session():
     return Session.builder.configs(st.secrets["snowflake"]).create()
 
 session = create_session()
 
-st.divider()
-
 c1, c2 = st.columns([1,2])
 with c1:
  st.info('**💡 **Team Data Maverick**💡**')
 
-
-
+st.divider()
 
 def make_chart ():
     #df = session.sql("SELECT to_date(timestamp)as timestamp, units_sold, product, NULL AS forecast FROM ADIDAS.PUBLIC.allproducts_sales where to_date(timestamp ) > (SELECT max(to_date(timestamp)) - interval ' 1 months' FROM ADIDAS.PUBLIC.allproducts_sales) UNION SELECT to_date(TS) AS timestamp, NULL AS units_sold, series AS product, forecast FROM ADIDAS.PUBLIC.us_sales_predictions ORDER BY timestamp, product asc").to_pandas()
@@ -70,12 +72,13 @@ def make_chart ():
 
 # Sidebar for actions
 
-st.markdown("""
-- Second part will generate forecasting model for units sold for multiple products- **Men's Apparel**,**Men's Athletic Footwear** & **Men's Street Footwear**.
-- Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the next 30 days.
-- Finally we will generate visualizations in the form of line chart.
+#st.markdown("""
+#- Second part will generate forecasting model for units sold for multiple products- **Men's Apparel**,**Men's Athletic Footwear** & **Men's Street Footwear**.
+#- Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the next 30 days.
+#- Finally we will generate visualizations in the form of line chart.
+#""")
 
-""")
+st.write('✏️ **Step 1:- Create Forecasting model for units sold for multiple products- **:orange[Men\'s Apparel,Men\'s Athletic Footwear & Men\'s Street Footwear]****')
 
 if 'button_clicked4' not in st.session_state:
     st.session_state.button_clicked4 = False

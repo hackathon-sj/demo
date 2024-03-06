@@ -12,7 +12,7 @@ from st_pages import add_page_title
 st.cache_data.clear()
 st.cache_resource.clear()
 
-st.header(':jeans: **Part One-Forecasting demand for Men\'s apparel**')
+st.header(':jeans: **Part One-Forecasting Demand for Men\'s apparel**')
 
 #st.title('Sales Forecast Visualization Application')
 
@@ -21,13 +21,10 @@ def create_session():
 
 session = create_session()
 
-st.divider()
-
 c1, c2 = st.columns([1,2])
 with c1:
  st.info('**💡 **Team Data Maverick**💡**')
-
-
+st.divider()
 
 
 def make_heatmap ():
@@ -76,10 +73,10 @@ def make_heatmap ():
 #- Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the number of days selected by user.
 #- Finally we will generate visualizations in the form of line chart.
 #""")
-st.write('✏️ **Step 1:- Create Forecasting model for units sold for product -Men\'s Apparel**')
+st.write('✏️ **Step 1:- Create Forecasting model for units sold for product- **:orange[Men\'s Apparel]****')
 if 'button_clicked1' not in st.session_state:
     st.session_state.button_clicked1 = False
-if st.button("Create Forecasting Model!"):
+if st.button("**:blue[Create Forecasting Model!]**"):
     st.session_state.button_clicked1=True
     session.sql("CREATE OR REPLACE forecast ADIDAS.PUBLIC.sales_forecast (INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'ADIDAS.PUBLIC.Mens_Apparel_sales'),TIMESTAMP_COLNAME => 'TIMESTAMP',TARGET_COLNAME => 'UNITS_SOLD');").collect()
 if st.session_state.button_clicked1:
@@ -87,15 +84,15 @@ if st.session_state.button_clicked1:
 
 #st.columns((1.5, 4.5, 2), gap='medium')
 Days = st.selectbox(
-     '**:red[Select Forecasting Period in days]**',
+     '**:red[Select Forecasting Period]**',
      ('30', '60', '90'),help="it helps")
 
-st.write('Selected days:', Days)
+st.write('**Selected days:**', Days)
 
 st.write('✏️ **Step 2:- Create Predictions for units sold for the number of days selected by user**')
 if 'button_clicked2' not in st.session_state:
     st.session_state.button_clicked2 = False
-if st.button("Create Predictions!"):
+if st.button("**:blue[Create Predictions!]**"):
     st.session_state.button_clicked2=True
     session.sql("CALL ADIDAS.PUBLIC.sales_forecast!FORECAST(FORECASTING_PERIODS =>"+Days+");").collect()
     session.sql("CREATE OR REPLACE TABLE ADIDAS.PUBLIC.sales_predictions AS (SELECT * FROM TABLE(RESULT_SCAN(-1)));").collect()
@@ -105,7 +102,7 @@ if st.session_state.button_clicked2:
 st.write('✏️ **Step 3:- Create Visualization**')
 if 'button_clicked3' not in st.session_state:
     st.session_state.button_clicked3 = False
-if st.button("View Line Chart !"):
+if st.button("**:blue[View Line Chart!]**"):
     st.session_state.button_clicked3=True
 
    # st.write(":heavy_minus_sign:" * 29) 
