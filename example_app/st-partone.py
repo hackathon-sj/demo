@@ -12,7 +12,9 @@ from st_pages import add_page_title
 st.cache_data.clear()
 st.cache_resource.clear()
 
-st.header(':jeans: **Part One-Forecasting Demand for Men\'s apparel**')
+st.header('👕:jeans: **Part One-Forecasting Demand**')
+
+st.subheader('**Units Sold for Men\'s apparel**')
 
 #st.title('Sales Forecast Visualization Application')
 
@@ -32,9 +34,7 @@ def make_heatmap ():
  # Assuming 'df' is a pandas DataFrame with 'TIMESTAMP', 'UNITS_SOLD', and 'FORECAST' columns
     df = session.sql("SELECT timestamp, units_sold, NULL AS forecast FROM ADIDAS.PUBLIC.Mens_Apparel_sales UNION SELECT TS AS timestamp, NULL AS units_sold, forecast FROM ADIDAS.PUBLIC.sales_predictions ORDER BY timestamp asc").to_pandas()
 
-    # Convert TIMESTAMP from string to datetime if not already
-    #df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'])
-
+    
     # Creating line charts for Units Sold and Forecast
     line_units_sold = alt.Chart(df).mark_line(color='blue', size=2).encode(
         x='TIMESTAMP:T',
@@ -64,16 +64,7 @@ def make_heatmap ():
     return chart
 
 
-
-
-
-#with st.expander("Expand this area to explore **first** part",expanded=False):
-#st.markdown("""
-#- First part will generate forecasting model for units sold for only one product- **Men's Apparel**.
-#- Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the number of days selected by user.
-#- Finally we will generate visualizations in the form of line chart.
-#""")
-st.write('✏️ **Step 1:- Create Forecasting model for units sold for product- **:orange[Men\'s Apparel]****')
+st.write('✏️ **Step 1:- Create Forecasting model for **:green[units sold]** for product- **:orange[Men\'s Apparel]****')
 if 'button_clicked1' not in st.session_state:
     st.session_state.button_clicked1 = False
 if st.button("**:blue[Create Forecasting Model!]**"):
@@ -83,13 +74,15 @@ if st.session_state.button_clicked1:
     st.success("Forecasting Model created successfully !")
 
 #st.columns((1.5, 4.5, 2), gap='medium')
+
+
+st.write('✏️ **Step 2:- Create Predictions for **:green[units sold]** for the number of days selected by user**')
 Days = st.selectbox(
      '**:red[Select Forecasting Period]**',
-     ('30', '60', '90'),help="it helps")
+     ('30', '60', '90'),help="Train model to create predictions for the demand for the selected days")
 
 st.write('**Selected days:**', Days)
 
-st.write('✏️ **Step 2:- Create Predictions for units sold for the number of days selected by user**')
 if 'button_clicked2' not in st.session_state:
     st.session_state.button_clicked2 = False
 if st.button("**:blue[Create Predictions!]**"):

@@ -12,8 +12,11 @@ st.cache_data.clear()
 st.cache_resource.clear()
 
 
-st.header('💰👖 **Part Three-Forecasting Demand**')
-st.subheader('**Total Sales for Men\'s apparel**')
+st.header('💵:shoe:👖 **Part Three-Forecasting Demand**')
+st.subheader('**Total Sales for Multiple Products**')
+st.markdown("""- Men\'s Apparel
+- Men\'s Athletic Footwear 
+- Men\'s Street Footwear""")
 
 
 def create_session():

@@ -11,7 +11,8 @@ from st_pages import add_page_title
 st.cache_data.clear()
 st.cache_resource.clear()
 
-st.header(':shoe: **Part Two-Forecasting Demand for Multiple Products**')
+st.header(':shoe:👖 **Part Two-Forecasting Demand**')
+st.subheader('**Units Sold for Multiple Products**')
 st.markdown("""- Men\'s Apparel
 - Men\'s Athletic Footwear 
 - Men\'s Street Footwear""")
@@ -39,7 +40,7 @@ def make_chart ():
                 alt.Tooltip('FORECAST:Q', title='FORECAST')]
 # Create a base chart with common encoding
     base = alt.Chart(df).encode(
-            alt.X('TIMESTAMP:T', title='Timestamp'),
+            alt.X('TIMESTAMP:T', title='TIMESTAMP'),
             alt.Color('PRODUCT:N', legend=alt.Legend(title="Product"))
          ).properties(
             width='container'
@@ -47,7 +48,7 @@ def make_chart ():
          
 # Define the units sold line
     units_sold_line = base.mark_line().encode(
-            alt.Y('UNITS_SOLD:Q', title='Values', scale=alt.Scale(zero=False)),
+            alt.Y('UNITS_SOLD:Q', title='UNITS_SOLD', scale=alt.Scale(zero=False)),
             tooltip=tooltip
         )
 # Define the forecast line
@@ -72,43 +73,41 @@ def make_chart ():
 
 # Sidebar for actions
 
-#st.markdown("""
-#- Second part will generate forecasting model for units sold for multiple products- **Men's Apparel**,**Men's Athletic Footwear** & **Men's Street Footwear**.
-#- Since we have sales dataset till 31-Jan-2024,it will generate predictions for units sold for the next 30 days.
-#- Finally we will generate visualizations in the form of line chart.
-#""")
 
-st.write('✏️ **Step 1:- Create Forecasting model for units sold for multiple products- **:orange[Men\'s Apparel,Men\'s Athletic Footwear & Men\'s Street Footwear]****')
+st.write('✏️ **Step 1:- Create Forecasting model for **:green[units sold]** for multiple products- **:orange[Men\'s Apparel,Men\'s Athletic Footwear & Men\'s Street Footwear]****')
 
 if 'button_clicked4' not in st.session_state:
     st.session_state.button_clicked4 = False
-if st.button("Build Forecasting Model!"):
+if st.button("**:blue[Create Forecasting Model!]**"):
         # Build Forecasting Model logic here
     st.session_state.button_clicked4=True
     session.sql("CREATE OR REPLACE forecast ADIDAS.PUBLIC.allproducts_forecast (INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'ADIDAS.PUBLIC.allproducts_sales'),SERIES_COLNAME => 'PRODUCT',TIMESTAMP_COLNAME => 'TIMESTAMP',TARGET_COLNAME => 'UNITS_SOLD');").collect()
 if st.session_state.button_clicked4:
     st.success("Forecasting Model created successfully !")
 
-st.columns((1.5, 4.5, 2), gap='medium')
-Days1 = st.selectbox(
-     'Select Forecasting Period in days!',
-     ('30', '60', '90'))
+st.write('✏️ **Step 2:- Create Predictions for **:green[units sold]** for the number of days selected by user**')
+Days = st.selectbox(
+     '**:red[Select Forecasting Period]**',
+     ('30', '60', '90'),help="Train model to create predictions for the demand for the selected days")
 
-st.write('Selected days:', Days1)
+st.write('**Selected days:**', Days)
+
+
 if 'button_clicked5' not in st.session_state:
     st.session_state.button_clicked5 = False
-if st.button("Generate Predictions!"):
+if st.button("**:blue[Create Predictions!]**"):
         # Generate Predictions logic here
     st.session_state.button_clicked5=True
-    session.sql("CREATE OR REPLACE VIEW ADIDAS.PUBLIC.us_forecast_data AS (WITH future_dates AS (SELECT (select max(timestamp) from NY_SALES_DATA) ::DATE + row_number() OVER (ORDER BY 0) AS timestamp FROM TABLE(generator(rowcount => "+Days1+"))),product_items AS (select distinct product  from allproducts_sales),joined_product_items AS (SELECT * FROM product_items CROSS JOIN future_dates ORDER BY product ASC, timestamp ASC)SELECT jmi.product,to_timestamp_ntz(jmi.timestamp) AS timestamp,ch.holiday_name FROM joined_product_items AS jmi LEFT JOIN us_holidays ch ON jmi.timestamp = ch.date ORDER BY jmi.product ASC,jmi.timestamp ASC);").collect()
+    session.sql("CREATE OR REPLACE VIEW ADIDAS.PUBLIC.us_forecast_data AS (WITH future_dates AS (SELECT (select max(timestamp) from NY_SALES_DATA) ::DATE + row_number() OVER (ORDER BY 0) AS timestamp FROM TABLE(generator(rowcount => "+Days+"))),product_items AS (select distinct product  from allproducts_sales),joined_product_items AS (SELECT * FROM product_items CROSS JOIN future_dates ORDER BY product ASC, timestamp ASC)SELECT jmi.product,to_timestamp_ntz(jmi.timestamp) AS timestamp,ch.holiday_name FROM joined_product_items AS jmi LEFT JOIN us_holidays ch ON jmi.timestamp = ch.date ORDER BY jmi.product ASC,jmi.timestamp ASC);").collect()
     session.sql("CALL ADIDAS.PUBLIC.allproducts_forecast!forecast(INPUT_DATA => SYSTEM$REFERENCE('VIEW', 'ADIDAS.PUBLIC.us_forecast_data'),SERIES_COLNAME => 'product',TIMESTAMP_COLNAME => 'timestamp');").collect()
     session.sql("CREATE OR REPLACE TABLE ADIDAS.PUBLIC.us_sales_predictions AS (SELECT * FROM TABLE(RESULT_SCAN(-1)));").collect()
 if st.session_state.button_clicked5:
     st.success("Predictions created successfully !")
 
+st.write('✏️ **Step 3:- Create Visualization**')
 if 'button_clicked6' not in st.session_state:
     st.session_state.button_clicked6 = False
-if st.button("Generate Visualizations!"):
+if st.button("**:blue[View Line Chart!]**"):
         # Generate Visualizations logic for col6 here
         # Visualization logic here (use fit-to-screen mode)
     st.session_state.button_clicked6=True
@@ -118,7 +117,7 @@ if st.button("Generate Visualizations!"):
 
 
 
-st.markdown('#### Visualization 2')
+
 st.write(":heavy_minus_sign:" * 29)    
 
 chart1= make_chart()
