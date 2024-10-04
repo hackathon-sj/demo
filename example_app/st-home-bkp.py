@@ -4,16 +4,22 @@ import altair as alt
 import pandas as pd
 from snowflake.snowpark import Session
 from pathlib import Path
-import importlib.util
-import os
 
+import streamlit as st
+
+#with st.echo("below"):
+from st_pages import Page, add_page_title, show_pages
 
 # Establish Snowflake session
-
-
-
 st.cache_data.clear()
 st.cache_resource.clear()
+
+st.set_page_config(
+    #page_title="Ex-stream-ly Cool App",
+    #page_icon="🧊",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
 st.divider()
 
@@ -53,7 +59,25 @@ st.divider()
 
 st.title('Sales Forecast Visualization Application')
 
+show_pages(
+    [
+        Page("example_app/st-home.py", "Home", "🏠"),
+            # Can use :<icon-name>: or the actual icon
+        Page("example_app/st-partone.py", "Part One", "👖"),
+            # The pages appear in the order you pass them
+        Page("example_app/st-parttwo.py", "Part Two", ":shoe:"),
+        Page("example_app/st-partthree.py", "Part Three", "💰"),
+        Page("example_app/st-partfour.py", "Part Four", "💵"),
+        #Page("example_app/st-partone.py", "Part One", ":jeans:"),
+            #Page("example_app/example_two.py", "Example Two", "✏️"),
+            # Will use the default icon and name based on the filename if you don't
+            # pass them
+            #Page("example_app/example_three.py"),
+            #Page("example_app/example_five.py", "Example Five", "🧰"),
+    ]
+)
 
+add_page_title()  # Optional method to add title and icon to current page
 
 st.markdown("""
 This app will build **forecast model** adding holiday information & generate predictions for units sold, total sales & operating profit.

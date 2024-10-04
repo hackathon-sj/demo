@@ -1,0 +1,24 @@
+[[pages]]
+path = "example_app/st-home.py"
+name = "Home"
+icon = "🏠"
+
+[[pages]]
+path = "example_app/st-partone.py"
+name = "Part One"
+icon = "👖"
+
+[[pages]]
+path = "example_app/st-parttwo.py"
+name = "Part Two"
+icon = ":shoe:"
+
+[[pages]]
+path = "example_app/st-partthree.py"
+name = "Part Three"
+icon = "💰"
+
+[[pages]]
+path = "example_app/st-partfour.py"
+name = "Part Four"
+icon = "💵"
