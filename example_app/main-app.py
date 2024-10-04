@@ -15,7 +15,7 @@ st.set_page_config(
 
 # Define your pages with icons
 pages = {
-    "🏠 Home": "example_app/st-home.py",
+    "🏠 **Home**": "example_app/st-home.py",
     "👖 Part One": "example_app/st-partone.py",
     "🥿 Part Two": "example_app/st-parttwo.py",
     "💰 Part Three": "example_app/st-partthree.py",
@@ -23,8 +23,12 @@ pages = {
 }
 
 # Sidebar for navigation with icons
-st.sidebar.title("Navigation")
-selection = st.sidebar.radio("Go to", list(pages.keys()))
+with st.sidebar:
+    
+    
+    st.title('**:orange[Navigation]**')
+    
+    selection = st.sidebar.radio("**Go to**", list(pages.keys()))
 
 # Get the corresponding page path
 page_path = pages[selection]
